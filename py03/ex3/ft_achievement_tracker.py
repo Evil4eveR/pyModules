@@ -44,13 +44,6 @@ def main() -> None:
     common = set.intersection(dylan, alice, bob, charlie)
 #    intersection = alice & bob & charlie & dylan
     print("\nCommon achievements:", common)
-    # print("Only Alice has:", uniq_achiev((dylan | bob | charlie), alice))
-    # print("Only Bob has:", uniq_achiev((dylan | alice | charlie), bob))
-    # print("Only Charlie has:", uniq_achiev((dylan | bob | alice), charlie))
-    # print("Only Dylan has:", uniq_achiev((alice | bob | charlie), dylan))
-    # print("Bob is missing:", no_achiev((dylan | alice | charlie), bob))
-    # print("Charlie is missing:", no_achiev((dylan | bob | alice), charlie))
-    # print("Dylan is missing:", no_achiev((alice | bob | charlie), dylan))
     print("\nOnly Alice has:", alice.difference(dylan | bob | charlie))
     print("Only Bob has:", bob.difference(dylan | alice | charlie))
     print("Only Charlie has:", charlie.difference(dylan | bob | alice))
@@ -59,6 +52,13 @@ def main() -> None:
     print("Bob is missing:", (dylan | alice | charlie).difference(bob))
     print("Charlie is missing:", (dylan | bob | alice).difference(charlie))
     print("Dylan is missing:", (alice | bob | charlie).difference(dylan))
+    # print("Only Alice has:", uniq_achiev((dylan | bob | charlie), alice))
+    # print("Only Bob has:", uniq_achiev((dylan | alice | charlie), bob))
+    # print("Only Charlie has:", uniq_achiev((dylan | bob | alice), charlie))
+    # print("Only Dylan has:", uniq_achiev((alice | bob | charlie), dylan))
+    # print("Bob is missing:", no_achiev((dylan | alice | charlie), bob))
+    # print("Charlie is missing:", no_achiev((dylan | bob | alice), charlie))
+    # print("Dylan is missing:", no_achiev((alice | bob | charlie), dylan))
 
 
 if __name__ == "__main__":
