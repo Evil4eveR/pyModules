@@ -2,38 +2,48 @@ import sys
 
 
 def main() -> None:
-    print("=== Cyber Archives Recovery & Preservation ===")
+    sys.stdout.write("=== Cyber Archives Recovery & Preservation ===\n")
     if (len(sys.argv) < 2):
         print(f"Usage: {sys.argv[0]} <file>")
         return None
+    filename = sys.argv[1]
+    print(f"Accessing file '{filename}'")
     try:
-        filename = sys.argv[1]
-        print(f"Accessing file '{filename}'")
-        with open(filename, "r") as f:
-            print("---")
-            data = f.read()
-            print(data)
-            print("---")
+        f = open(filename, "r")
+        print("---")
+        data = f.read()
+        print(data)
+        print("---")
+        f.close()
         print(f"File '{filename}' closed.")
-        print("\nTransform data")
-        print("---")
-        transform_data = data.strip().split("\n")
-        for line in transform_data:
-            print(line + "#")    
-        print("---")
-        sys.stdout.write("Enter new file name (or empty): ")
-        sys.stdout.flush()
-        new_file = sys.stdin.readline().strip()
-        print(f"Saving data to '{new_file}'")
-        if (new_file):
-            with open(new_file, "w") as f:
-                for line in transform_data:
-                    f.write(line + "#" + "\n")
-            print(f"Data saved in file '{new_file}'.")
-        else:
-            print("Data not saved.")
-    except Exception as e:
+    except (FileNotFoundError, PermissionError) as e:
         print(f"Error opening file '{filename}': {e}", file=sys.stderr)
+        return
+    transform_data = data.split("\n")
+    print("\nTransform data:")
+    print("---")
+    for line in transform_data:
+        if line:
+            print(line + "#")
+    print("---")
+    sys.stdout.write("Enter new file name (or empty): ")
+    sys.stdout.flush()
+    new_file = sys.stdin.readline().strip()
+    if (new_file):
+        print(f"Saving data to '{new_file}'")
+        try:
+            f = open(new_file, "w")
+            for line in transform_data:
+                if line:
+                    f.write(line + "#" + "\n")
+            f.close()
+            print(f"Data saved in file '{new_file}'.")
+        except (FileNotFoundError, PermissionError) as e:
+            print(f"Error opening file '{new_file}': {e}", file=sys.stderr)
+            print("Data not saved.")
+            return
+    else:
+        print("Not saving data.")
 
 
 if __name__ == "__main__":
