@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
-from typing import Any
+from typing import Any, Protocol
+import typing
 
 
 class DataProcessor(ABC):
@@ -19,9 +20,9 @@ class DataProcessor(ABC):
         self.ingested.append((self.rank, value))
         self.rank += 1
 
-    def output(self) -> tuple[int, str]:
+    def output(self) -> tuple[int, str] | None:
         if not self.ingested:
-            raise ValueError("Got exception: data empty")
+            return None
         return self.ingested.pop(0)
 
 
@@ -100,75 +101,94 @@ class LogProcessor(DataProcessor):
                 self._store(dic_str)
 
 
-def testnum() -> None:
-    print("\nTesting Numeric Processor...")
+class DataStream():
+    def __init__(self):
+        self.processors = []
+
+    def register_processor(self, proc: DataProcessor) -> None:
+        self.processors.append(proc)
+
+    def process_stream(self, stream: list[typing.Any]) -> None:
+        if not len(self.processors):
+            print("No processor found, no data")
+            return
+        for st in stream:
+            processed = False
+            for pro in self.processors:
+                if (pro.validate(st)):
+                    pro.ingest(st)
+                    processed = True
+                    break
+            if not processed:
+                print("DataStream error - Can't process " +
+                      f"element in stream: {st}")
+
+    def print_processors_stats(self) -> None:
+        if not self.processors:
+            print("No processor found, no data")
+            return
+        for pro in self.processors:
+            dpcnt = pro.rank - 1
+            remaining = len(pro.ingested)
+            print(f"{pro.__class__.__name__}: total {dpcnt} items " +
+                  f"processed,remaining {remaining} on processor")
+
+    def output_pipeline(self, nb: int, plugin: "ExportPlugin") -> None:
+        for proc in self.processors:
+            output_list = []
+            for _ in range(nb):
+                out = proc.output()
+                if not out:
+                    break
+                output_list.append(out)
+            plugin.process_output(output_list)
+            
+
+
+class ExportPlugin(Protocol):
+    def process_output(self, data: list[tuple[int, str]]) -> None:
+        ...
+    
+class CsvExport(ExportPlugin):
+    def process_output(self, data: list[tuple[int, str]]) -> None:
+        print("CVS Output:")
+        csv =",".join(dt[1] for dt in data)
+        print(csv)
+
+class JsonExport(ExportPlugin):
+    def process_output(self, data: list[tuple[int, str]]) -> None:
+        print("Json data")
+
+
+def testing() -> None:
+    print("\n== DataStream statistics ==")
+    ds = DataStream()
     np = NumericProcessor()
-    print(f"Trying to validate input '42': {np.validate(42)}")
-    print(f"Trying to validate input 'Hello': {np.validate('Hello')}")
-    print("Test invalid ingestion of string 'foo' without prior validation:")
-    try:
-        np.ingest("foo")
-    except ValueError as e:
-        print(e)
-    testnum = [1, 2, 3, 5, 4]
-    print(f"Processing data:{testnum}")
-    try:
-        np.ingest(testnum)
-    except ValueError as e:
-        print(e)
-    print("Extracting 3 values...")
-    for i in range(3):
-        print(f"Numeric value {i}: {np.output()[1]}")
-
-
-def testext() -> None:
-    print("\nTesting Text Processor...")
     tp = TextProcessor()
-    print(f"Trying to validate input '42': {tp.validate(42)}")
-    print(f"Trying to validate input 'hello': {tp.validate('hello')}")
-    print("Test invalid ingestion of number '42' without prior validation:")
-    try:
-        tp.ingest(42)
-    except ValueError as e:
-        print(e)
-    teststr = ['Hello', 'Nexus', 'World']
-    print(f"Processing data: {teststr}")
-    try:
-        tp.ingest(teststr)
-    except Exception as e:
-        print(e)
-    print("Extracting 1 value...")
-    for i in range(1):
-        print(f"Text value {i}: {tp.output()[1]}")
-
-
-def testlog() -> None:
-    print("\nTesting Log Processor...")
     lp = LogProcessor()
-    print(f"Trying to validate input 'Hello':{lp.validate('hello')}")
-    print("Trying to validate input '{'log_level': 'NOTICE'}':"
-          + f"{lp.validate({'log_level': 'NOTICE'})}")
-    try:
-        lp.ingest([1, 2, 3])
-    except ValueError as e:
-        print(e)
-    testlog = [{'log_level': 'NOTICE', 'log_message': 'Connection to server'},
-               {'log_level': 'ERROR', 'log_message': 'Unauthorized access!!'}]
-    try:
-        lp.ingest(testlog)
-    except ValueError as e:
-        print(e)
-    print("Extracting 2 values...")
-    for i in range(2):
-        print(f"Log entry {i}: {lp.output()[1]}")
+    ds.register_processor(tp)
+    ds.register_processor(lp)
+    ds.register_processor(np)
+    batch = ['Hello world', [3.14, -1, 2.71],
+             [{'log_level': 'WARNING',
+               'log_message': 'Telnet access! Use ssh instead'},
+              {'log_level': 'INFO',
+               'log_message': 'User wil isconnected'}],
+             42, ['Hi', 'five']]
+    print(f"Send first batch of data on stream: {batch}")
+    ds.process_stream(batch)
+    print("Send 3 processed data from each processor to a CSV plugin:")
+    ds.output_pipeline(5, plugin=CsvExport())
+    print("== DataStream statistics ==")
+    ds.print_processors_stats()
+
 
 
 def main() -> None:
-    testnum()
-    testext()
-    testlog()
+    print("\nInitialize Data Stream...")
+    testing()
 
 
 if __name__ == "__main__":
-    print("=== Code Nexus - Data Processor ===")
+    print("=== Code Nexus - Data Stream ===")
     main()

@@ -1,5 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Any
+import typing
 
 
 class DataProcessor(ABC):
@@ -100,75 +101,81 @@ class LogProcessor(DataProcessor):
                 self._store(dic_str)
 
 
-def testnum() -> None:
-    print("\nTesting Numeric Processor...")
+class DataStream():
+    def __init__(self):
+        self.processors = []
+
+    def register_processor(self, proc: DataProcessor) -> None:
+        self.processors.append(proc)
+
+    def process_stream(self, stream: list[typing.Any]) -> None:
+        if not len(self.processors):
+            print("No processor found, no data")
+            return
+        for st in stream:
+            processed = False
+            for pro in self.processors:
+                if (pro.validate(st)):
+                    pro.ingest(st)
+                    processed = True
+                    break
+            if not processed:
+                print("DataStream error - Can't process " +
+                      f"element in stream: {st}")
+
+    def print_processors_stats(self) -> None:
+        if not self.processors:
+            print("No processor found, no data")
+            return
+        for pro in self.processors:
+            dpcnt = pro.rank - 1
+            remaining = len(pro.ingested)
+            print(f"{pro.__class__.__name__}: total {dpcnt} items " +
+                  f"processed,remaining {remaining} on processor")
+
+
+def testing() -> None:
+    print("== DataStream statistics ==")
+    ds = DataStream()
     np = NumericProcessor()
-    print(f"Trying to validate input '42': {np.validate(42)}")
-    print(f"Trying to validate input 'Hello': {np.validate('Hello')}")
-    print("Test invalid ingestion of string 'foo' without prior validation:")
-    try:
-        np.ingest("foo")
-    except ValueError as e:
-        print(e)
-    testnum = [1, 2, 3, 5, 4]
-    print(f"Processing data:{testnum}")
-    try:
-        np.ingest(testnum)
-    except ValueError as e:
-        print(e)
-    print("Extracting 3 values...")
-    for i in range(3):
-        print(f"Numeric value {i}: {np.output()[1]}")
-
-
-def testext() -> None:
-    print("\nTesting Text Processor...")
     tp = TextProcessor()
-    print(f"Trying to validate input '42': {tp.validate(42)}")
-    print(f"Trying to validate input 'hello': {tp.validate('hello')}")
-    print("Test invalid ingestion of number '42' without prior validation:")
-    try:
-        tp.ingest(42)
-    except ValueError as e:
-        print(e)
-    teststr = ['Hello', 'Nexus', 'World']
-    print(f"Processing data: {teststr}")
-    try:
-        tp.ingest(teststr)
-    except Exception as e:
-        print(e)
-    print("Extracting 1 value...")
-    for i in range(1):
-        print(f"Text value {i}: {tp.output()[1]}")
-
-
-def testlog() -> None:
-    print("\nTesting Log Processor...")
     lp = LogProcessor()
-    print(f"Trying to validate input 'Hello':{lp.validate('hello')}")
-    print("Trying to validate input '{'log_level': 'NOTICE'}':"
-          + f"{lp.validate({'log_level': 'NOTICE'})}")
-    try:
-        lp.ingest([1, 2, 3])
-    except ValueError as e:
-        print(e)
-    testlog = [{'log_level': 'NOTICE', 'log_message': 'Connection to server'},
-               {'log_level': 'ERROR', 'log_message': 'Unauthorized access!!'}]
-    try:
-        lp.ingest(testlog)
-    except ValueError as e:
-        print(e)
-    print("Extracting 2 values...")
-    for i in range(2):
-        print(f"Log entry {i}: {lp.output()[1]}")
+    ds.print_processors_stats()
+    print("\nRegistering Numeric Processor\n")
+    ds.register_processor(np)
+    batch = ['Hello world', [3.14, -1, 2.71],
+             [{'log_level': 'WARNING',
+               'log_message': 'Telnet access! Use ssh instead'},
+              {'log_level': 'INFO',
+               'log_message': 'User wil isconnected'}],
+             42, ['Hi', 'five']]
+    print(f"Send first batch of data on stream: {batch}")
+    ds.process_stream(batch)
+    print("== DataStream statistics ==")
+    ds.print_processors_stats()
+    print("\nRegistering other data processors")
+    ds.register_processor(tp)
+    ds.register_processor(lp)
+    print("Send the same batch again")
+    print("== DataStream statistics ==")
+    ds.process_stream(batch)
+    ds.print_processors_stats()
+    print("\nConsume some elements from the data processors:"
+          " Numeric 3, Text 2, Log 1")
+    print("== DataStream statistics ==")
+    for _ in range(3):
+        np.output()
+    for _ in range(2):
+        tp.output()
+    lp.output()
+    ds.print_processors_stats()
 
 
 def main() -> None:
-    testnum()
-    testext()
-    testlog()
+    print("\nInitialize Data Stream...")
+    testing()
 
 
 if __name__ == "__main__":
-    print("=== Code Nexus - Data Processor ===")
+    print("=== Code Nexus - Data Stream ===")
     main()
