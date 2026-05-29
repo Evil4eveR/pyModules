@@ -6,7 +6,7 @@ import typing
 class DataProcessor(ABC):
     def __init__(self) -> None:
         self.ingested: list[tuple[int, str]] = []
-        self.rank = 1
+        self.rank = 0
 
     @abstractmethod
     def validate(self, data: Any) -> bool:
@@ -20,9 +20,9 @@ class DataProcessor(ABC):
         self.ingested.append((self.rank, value))
         self.rank += 1
 
-    def output(self) -> tuple[int, str] | None:
+    def output(self) -> tuple[int, str]:
         if not self.ingested:
-            return None
+            return (-1, "No data to be Extracted")
         return self.ingested.pop(0)
 
 
@@ -138,26 +138,31 @@ class DataStream():
             output_list = []
             for _ in range(nb):
                 out = proc.output()
-                if not out:
+                if out[0] == -1:
                     break
                 output_list.append(out)
             plugin.process_output(output_list)
-            
 
 
 class ExportPlugin(Protocol):
     def process_output(self, data: list[tuple[int, str]]) -> None:
         ...
-    
+
+
 class CsvExport(ExportPlugin):
     def process_output(self, data: list[tuple[int, str]]) -> None:
         print("CVS Output:")
-        csv =",".join(dt[1] for dt in data)
+        csv = ",".join(dt[1] for dt in data)
         print(csv)
+
 
 class JsonExport(ExportPlugin):
     def process_output(self, data: list[tuple[int, str]]) -> None:
-        print("Json data")
+        print("Json Output:")
+        jsn = {}
+        for dt in data:
+            jsn["item_" + str(dt[0])] = dt[1]
+        print(jsn)
 
 
 def testing() -> None:
@@ -166,22 +171,39 @@ def testing() -> None:
     np = NumericProcessor()
     tp = TextProcessor()
     lp = LogProcessor()
-    ds.register_processor(tp)
-    ds.register_processor(lp)
-    ds.register_processor(np)
+    print("\n== DataStream statistics ==")
     batch = ['Hello world', [3.14, -1, 2.71],
              [{'log_level': 'WARNING',
                'log_message': 'Telnet access! Use ssh instead'},
               {'log_level': 'INFO',
                'log_message': 'User wil isconnected'}],
              42, ['Hi', 'five']]
-    print(f"Send first batch of data on stream: {batch}")
     ds.process_stream(batch)
-    print("Send 3 processed data from each processor to a CSV plugin:")
-    ds.output_pipeline(5, plugin=CsvExport())
-    print("== DataStream statistics ==")
+    print("\nRegistering Processors")
+    ds.register_processor(np)
+    ds.register_processor(tp)
+    ds.register_processor(lp)
+    print(f"\nSend first batch of data on stream: {batch}")
+    ds.process_stream(batch)
+    print("\n== DataStream statistics ==")
     ds.print_processors_stats()
-
+    print("\nSend 3 processed data from each processor to a CSV plugin:")
+    ds.output_pipeline(3, CsvExport())
+    print("\n== DataStream statistics ==")
+    ds.print_processors_stats()
+    batch2 = [21, ['I love AI', 'LLMs are wonderful', 'Stay healthy'],
+              [{'log_level': 'ERROR', 'log_message': '500 server crash'},
+               {'log_level': 'NOTICE',
+                'log_message': 'Certificateexpires in 10 days'}
+               ], [32, 42, 64, 84, 128, 168], 'World hello']
+    ds.process_stream(batch2)
+    print(f"\nSend another batch of data:{batch2}")
+    print("\n== DataStream statistics ==")
+    ds.print_processors_stats()
+    print("\nSend 5 processed data from each processor to a JSON plugin:")
+    ds.output_pipeline(5, JsonExport())
+    print("\n== DataStream statistics ==")
+    ds.print_processors_stats()
 
 
 def main() -> None:
