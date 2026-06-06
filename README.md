@@ -29,3 +29,18 @@ powerful data structures while building and processing game data.
 
 Preserve digital knowledge by mastering file operations, managing data
 streams, and building robust archival systems that protect information.
+
+***Python Module 05***
+
+**Description**
+
+Master abstract classes, method overriding, and subtype polymorphism while
+building advanced data processing pipelines that adapt and evolve in real time.
+
+***Python Module 06***
+
+**Description**
+
+Discover the ancient art of Python imports through alchemical experiments.
+Master the four sacred mysteries: package initialization, import pathways, absolute vs
+relative access, and breaking circular dependencies.
