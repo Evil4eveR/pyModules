@@ -1,4 +1,17 @@
-from ex0 import Creature
+from abc import ABC, abstractmethod
+
+
+class Creature(ABC):
+    def __init__(self, name: str, c_type: str) -> None:
+        self.name = name
+        self.c_type = c_type
+
+    @abstractmethod
+    def attack(self) -> str:
+        ...
+
+    def describe(self) -> str:
+        return f"{self.name} is a {self.c_type} type Creature"
 
 
 class Flameling(Creature):

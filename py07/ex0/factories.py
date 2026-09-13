@@ -1,12 +1,8 @@
 from abc import ABC, abstractmethod
-from ex0 import Creature
-from ex0 import Flameling, Pyrodon, Aquabub, Torragon
+from ex0.creatures import Creature, Flameling, Pyrodon, Aquabub, Torragon
 
 
 class CreatureFactory(ABC):
-    def __init__(self) -> None:
-        super().__init__()
-
     @abstractmethod
     def create_base(self) -> Creature:
         ...
