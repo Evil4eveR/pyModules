@@ -67,3 +67,11 @@ environment configuration to build your first data pipeline.
 Master Pydantic data validation through space-themed exercises. Learn to
 create robust models, implement custom validation, and handle nested structures while
 managing cosmic data streams.
+
+***Python Module 10***
+
+**Description**
+
+Welcome to FuncMage Chronicles! In the year 2142, you are a Function
+Mage learning the ancient arts of higher-order functions, decorators, and lambda spells.
+Master these powerful techniques to restore balance to the digital realm.
